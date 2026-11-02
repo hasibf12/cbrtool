@@ -9,14 +9,13 @@ import glob
 import re
 
 from core.config import (
-    CYAN, ORANGE, GREEN, RED, PURPLE, HACKER_GREEN, RESET, BOLD, DIM,
-    get_cloud_setting, IS_WINDOWS
+    CYAN, ORANGE, GREEN, RED, PURPLE, HACKER_GREEN, RESET, BOLD, DIM, IS_WINDOWS
 )
 from core.utils import (
     get_device_info, wait_and_connect_fastboot, get_fastboot_bin,
     trigger_otg_popup
 )
-from core.auth import send_activity_log
+from core.auth import send_activity_log, get_cloud_setting
 
 def extract_safe_zip(zip_path, extract_folder):
     print(f"\n{CYAN}[EXTRACTING]{RESET} Unpacking {os.path.basename(zip_path)}...")
