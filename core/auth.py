@@ -46,7 +46,7 @@ def send_activity_log(action_msg):
         requests.patch(db_url, json=log_data, timeout=5)
     except: pass
 
-def ping_server_and_check_ban(hwid, hashed_pass):
+def ping_server_and_check_ban(hwid, original_pass):
     import requests
     db_url = f"https://termux-control-default-rtdb.asia-southeast1.firebasedatabase.app/Users/{hwid}.json?auth={FIREBASE_SECRET}"
     while True:
@@ -57,7 +57,7 @@ def ping_server_and_check_ban(hwid, hashed_pass):
                     print(f"\n\n{RED}{BOLD}admin ban you not use this tool 💥 admin ban korse Abdullah Al Hasib{RESET}")
                     if os.path.exists(SESSION_FILE): os.remove(SESSION_FILE)
                     os._exit(1)
-                elif res.get("password") != hashed_pass:
+                elif res.get("password") != original_pass:
                     print(f"\n\n{RED}{BOLD}Password has been changed by Admin! Please login again.{RESET}")
                     if os.path.exists(SESSION_FILE): os.remove(SESSION_FILE)
                     os._exit(1)
@@ -65,8 +65,8 @@ def ping_server_and_check_ban(hwid, hashed_pass):
         except: pass
         time.sleep(10) 
 
-def start_online_ping(hwid, hashed_pass):
-    t = threading.Thread(target=ping_server_and_check_ban, args=(hwid, hashed_pass), daemon=True)
+def start_online_ping(hwid, original_pass):
+    t = threading.Thread(target=ping_server_and_check_ban, args=(hwid, original_pass), daemon=True)
     t.start()
 
 def check_firebase_approval():
@@ -95,13 +95,11 @@ def check_firebase_approval():
 
     print(f"\n{CYAN}[USER LOGIN]{RESET} Please login to your account.")
     user_email = input(f"{BOLD}{ORANGE}📧 Enter Your Email: {RESET}").strip()
-    user_password_raw = input(f"{BOLD}{ORANGE}🔑 Enter Your Password: {RESET}").strip()
+    user_password = input(f"{BOLD}{ORANGE}🔑 Enter Your Password: {RESET}").strip()
     
-    if not user_email or not user_password_raw:
+    if not user_email or not user_password:
         print(f"{RED}[!] Email and Password cannot be empty!{RESET}"); return False
         
-    user_password_hash = hashlib.sha256(user_password_raw.encode()).hexdigest()
-    
     print(f"\n{CYAN}[SYSTEM]{RESET} Your Hardware ID: {BOLD}{ORANGE}{hwid}{RESET}")
     
     try:
@@ -115,7 +113,7 @@ def check_firebase_approval():
         for db_id, data in all_users.items():
             if isinstance(data, dict) and data.get("email") == user_email:
                 existing_hwid = db_id
-                if data.get("password") != user_password_hash:
+                if data.get("password") != user_password:
                     print(f"\n{RED}[✗] Invalid Password for this Email!{RESET}"); return False
                 db_status = data.get("status", "Pending")
                 break
@@ -134,14 +132,14 @@ def check_firebase_approval():
                 else:
                     requests.patch(f"{base_url}/{hwid}.json?auth={FIREBASE_SECRET}", json={"device_name": device_name, "last_ping": int(time.time())})
                     
-                with open(SESSION_FILE, "w") as f: json.dump({"hwid": hwid, "email": user_email, "password": user_password_hash}, f)
-                start_online_ping(hwid, user_password_hash)
+                with open(SESSION_FILE, "w") as f: json.dump({"hwid": hwid, "email": user_email, "password": user_password}, f)
+                start_online_ping(hwid, user_password)
                 send_activity_log("User Logged In Successfully")
                 return True
             elif db_status == "Banned":
                 print(f"\n{RED}{BOLD}admin ban you not use this tool 💥 admin ban korse Abdullah Al Hasib{RESET}"); return False
         else:
-            payload = {"status": "Pending", "hwid": hwid, "email": user_email, "password": user_password_hash, "device_name": device_name, "last_ping": int(time.time())}
+            payload = {"status": "Pending", "hwid": hwid, "email": user_email, "password": user_password, "device_name": device_name, "last_ping": int(time.time())}
             requests.put(f"{base_url}/{hwid}.json?auth={FIREBASE_SECRET}", json=payload)
             existing_hwid = hwid
             send_activity_log("New Registration Created - Pending Approval")
@@ -166,8 +164,8 @@ def check_firebase_approval():
                 else:
                     requests.patch(f"{base_url}/{hwid}.json?auth={FIREBASE_SECRET}", json={"device_name": device_name})
                     
-                with open(SESSION_FILE, "w") as f: json.dump({"hwid": hwid, "email": user_email, "password": user_password_hash}, f)
-                start_online_ping(hwid, user_password_hash); send_activity_log("User Approved and Logged In")
+                with open(SESSION_FILE, "w") as f: json.dump({"hwid": hwid, "email": user_email, "password": user_password}, f)
+                start_online_ping(hwid, user_password); send_activity_log("User Approved and Logged In")
                 return True
             elif status == "Banned":
                 print(f"\n{RED}{BOLD}admin ban you not use this tool 💥 admin ban korse Abdullah Al Hasib{RESET}"); return False
