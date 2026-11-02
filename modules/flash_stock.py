@@ -198,7 +198,15 @@ def cbr_smart_flasher(brand="redmi"):
                     print(f"{ORANGE}[BYPASS]{RESET} {DIM}Skipping script logic/check: {line}{RESET}")
                     continue
                 
-                if fb_bin != "fastboot" and cmd.lower().startswith("fastboot "): cmd = fb_bin + cmd[8:]
+                if fb_bin != "fastboot" and cmd.lower().startswith("fastboot "): 
+                    cmd = fb_bin + cmd[8:]
+                
+                # 🔥 RAM OVERLOAD PROTECTION FOR MOBILE OTG 🔥
+                # বিশাল পার্টিশনগুলোতে (super, userdata) অটোমেটিক -S 128M ইনজেক্ট করে দিবে
+                if not IS_WINDOWS and ("flash super" in cmd.lower() or "flash userdata" in cmd.lower() or "flash system" in cmd.lower()):
+                    if "-s" not in cmd.lower():
+                        cmd = cmd.replace("flash ", "-S 128M flash ", 1)
+                        print(f"{CYAN}[RAM SHIELD]{RESET} Enabled 128M sparse chunks to prevent OTG crash!")
                 
                 success = False
                 for attempt in range(3):
@@ -286,7 +294,8 @@ def cbr_smart_flasher(brand="redmi"):
         
         import shlex
         super_path = shlex.quote(os.path.join(rom_img_dir, scatter_single_map.get("super", "super.img")))
-        execute_cmd(f'fastboot {"-S 64M " if not IS_WINDOWS else ""}flash super {super_path}')
+        # Infinix এর জন্য ১২৮ এমবি স্পার্স আগে থেকেই ফিক্স করে দিলাম
+        execute_cmd(f'fastboot {"-S 128M " if not IS_WINDOWS else ""}flash super {super_path}')
         execute_cmd("fastboot -w")
         
         print(f"\n{CYAN}>>> BOOTLOADER FLASHING <<<{RESET}")
@@ -297,7 +306,7 @@ def cbr_smart_flasher(brand="redmi"):
             execute_cmd(f'fastboot flash {b_part}_b {img_path}')
         
         user_path = shlex.quote(os.path.join(rom_img_dir, scatter_single_map.get("userdata", "userdata.img")))
-        execute_cmd(f'fastboot flash userdata {user_path}')
+        execute_cmd(f'fastboot {"-S 128M " if not IS_WINDOWS else ""}flash userdata {user_path}')
         
         print(f"\n{CYAN}>>> VBMETA DISABLE <<<{RESET}")
         for v_part, f_name in scatter_vbmeta_map.items():
